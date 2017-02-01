@@ -1,0 +1,8 @@
+HelloIntent hi
+HelloIntent hallo
+WelcomingIntent begrüße {name}
+ILoveYouIntent sage {name} dass ich sie liebe
+LotteryIntent habe ich im Lotto gewonnen
+LotteryIntent ob ich im Lotte gewonnen habe
+QuitIntent beenden
+QuitIntent abbrechen

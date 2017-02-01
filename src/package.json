@@ -1,0 +1,10 @@
+{
+  "name": "meine Wohnung",
+  "version": "0.0.1",
+  "dependencies": {
+    "html-div2json-js": "^0.1.8",
+    "node-fetch": "^1.6.3",
+    "sync-request": "^4.0.1",
+    "then-request": "^2.2.0"
+  }
+}

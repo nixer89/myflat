@@ -1,0 +1,9 @@
+HelloIntent hi
+HelloIntent hello
+WelcomingIntent say hi to {name}
+WelcomingIntent say hello to {name}
+ILoveYouIntent say I love you to {name}
+LotteryIntent did i won the lottery
+QuitIntent bye
+QuitIntent goodbye
+QuitIntent ciao
