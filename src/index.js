@@ -9,16 +9,6 @@
 */
 
 /**
- * This simple sample has no external dependencies or session management, and shows the most basic
- * example of how to create a Lambda function for handling Alexa Skill requests.
- *
- * Examples:
- * One-shot model:
- *  User: "Alexa, tell Hello World to say hello"
- *  Alexa: "Hello World!"
- */
-
-/**
  * App ID for the skill
  */
 var APP_ID = "amzn1.ask.skill.077188d5-fe1c-4d5a-a196-39c5648a3622";
@@ -41,8 +31,8 @@ var MyFlat = function () {
 
 var LOTTO_URL = "http://www.lottozahlenonline.de/statistik/beide-spieltage/lottozahlen-archiv.php?j=";
 var locale = "de-DE";
-var myNumbers = [6,12,18,21,27,48];
-var mySuperZahl = 6;
+var myNumbers = ['6','12','18','21','27','48'];
+var mySuperZahl = '6';
 
 // Extend AlexaSkill
 MyFlat.prototype = Object.create(AlexaSkill.prototype);
@@ -80,32 +70,6 @@ var US_Intent_Handler = {
     "ILoveYouIntent": function (intent, session, response) {
         response.ask("I love you so much " + intent.slots.name.value + ". You are the sweetest girl on earth!","");
     },
-    "LotteryIntent": function (intent, session, response) {
-        invokeBackend("http://www.lottozahlenonline.de/statistik/beide-spieltage/lottozahlen-archiv.php?j=2017").then(function(body) {
-            var alleGewinnZahlen = convertLottoToJson(body, "gewinnzahlen", 1);
-
-            //somehow we need to convert here -> pick last found lotto day and stringify it!
-            var lastDayString = JSON.stringify(alleGewinnZahlen[alleGewinnZahlen.length-1]);
-            //put the stringified day back to json so we can access the members
-            var lastLottoDayJson = JSON.parse(lastDayString.substring(1, lastDayString.length-1));
-
-            //check how many matches we have with the given numbers!
-            var numberOfMatches = checkLottoNumbers(lastLottoDayJson);
-            //also get the superzahl
-            var superZahl = getSuperZahl(lastLottoDayJson);
-
-            if(numberOfMatches == 0)
-                response.tell("You don`t have any match in the last lottery. You didn`t won anything! Good luck for the next lottery!");
-            else if(numberOfMatches == 1)
-                response.tell("In der letzten Ziehung hattest du nur eine richtige Zahl. Somit hast du leider nichts gewonnen! Ich wünsche dir weiterhin viel Glück!");
-            else if(numberOfMatches == 2 && !(mySuperZahl == superZahl))
-                response.tell("In der letzten Ziehung hattest du nur zwei richtige Zahlen. Somit hast du leider nichts gewonnen! Ich wünsche dir weiterhin viel Glück!");
-            else if(numberOfMatches == 6 && mySuperZahl == superZahl)
-                response.tell("Du hast den JackPott geknackt! Alle Zahlen und die Superzahl hast du richtig getippt. Jetzt kannst du es richtig krachen lassen! Herzlichen Glückwunsch!");
-            else
-                response.tell("In der letzten Ziehung hast du " + numberOfMatches + " richtige Zahlen " + (mySuperZahl == superZahl ? " und sogar die Superzahl richtig! Herzlichen Glückwunsch!" : ""));
-        });
-    },
     "AMAZON.HelpIntent": function (intent, session, response) {
         response.ask("You can say hello to me!", "You can say hello to me!");
     },
@@ -129,29 +93,31 @@ var DE_Intent_Handler  = {
         response.ask("Ich liebe dich so sehr " + intent.slots.name.value + ". Du bist das süßeste Mädchen auf der Welt!","");
     },
     "LotteryIntent": function (intent, session, response) {
-        invokeBackend("http://www.lottozahlenonline.de/statistik/beide-spieltage/lottozahlen-archiv.php?j=2017").then(function(body) {
+        invokeBackend(LOTTO_URL + "2017").then(function(body) {
             var alleGewinnZahlen = convertLottoToJson(body, "gewinnzahlen", 1);
-
-            //somehow we need to convert here -> pick last found lotto day and stringify it!
-            var lastDayString = JSON.stringify(alleGewinnZahlen[alleGewinnZahlen.length-1]);
-            //put the stringified day back to json so we can access the members
-            var lastLottoDayJson = JSON.parse(lastDayString.substring(1, lastDayString.length-1));
-
+            var lastLottoDayJson = alleGewinnZahlen[alleGewinnZahlen.length-1][0];
+            
+            console.log(lastLottoDayJson);
+            
             //check how many matches we have with the given numbers!
-            var numberOfMatches = checkLottoNumbers(lastLottoDayJson);
+            var gewinnZahlen = getMatchingNumbers(lastLottoDayJson);
+            
+            console.log(gewinnZahlen);
+            
+            var numberOfMatches = gewinnZahlen.length;
             //also get the superzahl
             var superZahl = getSuperZahl(lastLottoDayJson);
 
             if(numberOfMatches == 0)
-                response.tell("In der letzten Ziehung hattest du leider keine richtige Zahl. Somit hast du leider nichts gewonnen! Ich wünsche dir weiterhin viel Glück!");
+                response.tell("In der letzten Ziehung vom " + lastLottoDayJson.zahlensuche_datum + " hattest du leider keine richtige Zahl. Somit hast du leider nichts gewonnen! Ich wünsche dir weiterhin viel Glück!");
             else if(numberOfMatches == 1)
-                response.tell("In der letzten Ziehung hattest du nur eine richtige Zahl. Somit hast du leider nichts gewonnen! Ich wünsche dir weiterhin viel Glück!");
+                response.tell("In der letzten Ziehung vom " + lastLottoDayJson.zahlensuche_datum + " hattest du nur eine richtige Zahl. Somit hast du leider nichts gewonnen! Ich wünsche dir weiterhin viel Glück!");
             else if(numberOfMatches == 2 && !(mySuperZahl == superZahl))
-                response.tell("In der letzten Ziehung hattest du nur zwei richtige Zahlen. Somit hast du leider nichts gewonnen! Ich wünsche dir weiterhin viel Glück!");
+                response.tell("In der letzten Ziehung vom " + lastLottoDayJson.zahlensuche_datum + " hattest du nur zwei richtige Zahlen. Somit hast du leider nichts gewonnen! Ich wünsche dir weiterhin viel Glück!");
             else if(numberOfMatches == 6 && mySuperZahl == superZahl)
-                response.tell("Du hast den JackPott geknackt! Alle Zahlen und die Superzahl hast du richtig getippt. Jetzt kannst du es richtig krachen lassen! Herzlichen Glückwunsch!");
+                response.tell("In der letzten Ziehung vom " + lastLottoDayJson.zahlensuche_datum + " hast den JackPott geknackt! Alle Zahlen und die Superzahl hast du richtig getippt. Jetzt kannst du es richtig krachen lassen! Herzlichen Glückwunsch!");
             else
-                response.tell("In der letzten Ziehung hast du " + numberOfMatches + " richtige Zahlen " + (mySuperZahl == superZahl ? " und sogar die Superzahl richtig! Herzlichen Glückwunsch!" : ""));
+                response.tell("In der letzten Ziehung vom " + lastLottoDayJson.zahlensuche_datum + " hast du " + numberOfMatches + " richtige Zahlen " + (mySuperZahl == superZahl ? " und sogar die Superzahl richtig! Herzlichen Glückwunsch!" : ""));
         });
     },
     "AMAZON.HelpIntent": function (intent, session, response) {
@@ -177,21 +143,12 @@ exports.handler = function (event, context) {
     myFlat.execute(event, context);
 };
 
-function checkLottoNumbers(lastDayJson) {
+function getMatchingNumbers(lastDayJson) {
     var numberOfMatches = 0;
 
     var gewinnZahlen = [lastDayJson.zahlensuche_zahl, lastDayJson.zahlensuche_zahl3, lastDayJson.zahlensuche_zahl4, lastDayJson.zahlensuche_zahl5, lastDayJson.zahlensuche_zahl6, lastDayJson.zahlensuche_zahl7];
-
-    for(var i=0; i < myNumbers.length;i++)
-    {
-        for(var j=0; j < gewinnZahlen.length;j++)
-        {
-            if(myNumbers[j] == gewinnZahlen[i])
-                numberOfMatches++;
-        }
-    }
-
-    return numberOfMatches;
+    
+    return gewinnZahlen.filter(n => myNumbers.indexOf(n) != -1);
 }
 
 function getSuperZahl(lastDay) {
