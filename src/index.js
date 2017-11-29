@@ -11,13 +11,25 @@
 /**
  * App ID for the skill
  */
-var APP_ID = "amzn1.ask.skill.077188d5-fe1c-4d5a-a196-39c5648a3622";
+var APP_ID = process.env.APP_ID;
+var LOTTO_DATA_TABLE_NAME = process.env.DB_TABLE;
+var credentials = {
+    accessKeyId: process.env.DB_ACCESS_KEY_ID,
+    secretAccessKey: process.env.DB_SECRET_ACCESS_KEY,
+    region: 'eu-west-1'
+};
 
 /**
  * The AlexaSkill prototype and helper functions
  */
 var AlexaSkill = require('./AlexaSkill');
 var nodeFetch = require('node-fetch');
+var dynasty = require('dynasty')(credentials);
+var divtojson = require('html-div2json-js');
+
+var lottoDbTable = function() {
+    return dynasty.table(LOTTO_DATA_TABLE_NAME);
+};
 
 /**
  * MyFlat is a child of AlexaSkill.
@@ -70,6 +82,12 @@ var US_Intent_Handler = {
     "ILoveYouIntent": function (intent, session, response) {
         response.ask("I love you so much " + intent.slots.name.value + ". You are the sweetest girl on earth!","");
     },
+    "AskForStoredLotteryCount": function (intent, session, response) {
+        lottoDbTable().scan().then(function(allEntries) {
+            var output = "Currently, you have " + allEntries.length + " entries in your database";
+            response.tell(output);
+        });
+    },
     "AMAZON.HelpIntent": function (intent, session, response) {
         response.ask("You can say hello to me!", "You can say hello to me!");
     },
@@ -120,6 +138,12 @@ var DE_Intent_Handler  = {
                 response.tell("In der letzten Ziehung vom " + lastLottoDayJson.zahlensuche_datum + " hast du " + numberOfMatches + " richtige Zahlen " + (mySuperZahl == superZahl ? " und sogar die Superzahl richtig! Herzlichen Glückwunsch!" : ""));
         });
     },
+    "AskForStoredLotteryCount": function (intent, session, response) {
+        lottoDbTable().scan().then(function(allEntries) {
+            var output = "Aktuell befinden sich " + allEntries.length + " Einträge in deiner Datenbank";
+            response.tell(output);
+        });
+    },
     "AMAZON.HelpIntent": function (intent, session, response) {
         response.ask("Du kannst hallo zu mir sagen!", "Du kannst hallo zu mir sagen!");
     },
@@ -156,7 +180,6 @@ function getSuperZahl(lastDay) {
 }
 
 function convertLottoToJson(html, div_name, row_offset) {
-    var divtojson = require('html-div2json-js');
     return divtojson.convert(html, div_name, row_offset);
 }
 

@@ -4,6 +4,12 @@ WelcomingIntent say hi to {name}
 WelcomingIntent say hello to {name}
 ILoveYouIntent say I love you to {name}
 LotteryIntent did i won the lottery
+AskForStoredLotteryCount how many entries do I have in my database
+AskForStoredLotteryCount how many entries do I have
+AskForStoredLotteryCount how many users do I have
+AskForStoredLotteryCount for the count of users
+AskForStoredLotteryCount for the count of items
+AskForStoredLotteryCount for the count of entries
 QuitIntent bye
 QuitIntent goodbye
 QuitIntent ciao
