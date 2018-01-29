@@ -113,47 +113,52 @@ var DE_Intent_Handler  = {
     },
     "AskHighesLotteryWin": function (intent, session, response) {
         lottoDbTable().scan().then(function(allEntries) {
-            var winningResponse = "";
-
             var lotteryName = "sechs aus neun und vierzig"
             var config = skillHelper.getConfigByUtterance(lotteryName);
             session.attributes.currentConfig = config;
             var highestPrice = 0;
-            highestPrice = getHighesPriceByLottery(allEntries, "german6aus49", session);
-            winningResponse += "In 6 aus 49: " + highestPrice + " €. ";
+            var winningResponse = "";
 
-            lotteryName = "euro jackpot";
-            config = skillHelper.getConfigByUtterance(lotteryName);
-            session.attributes.currentConfig = config;
-            highestPrice = getHighesPriceByLottery(allEntries, "euroJackpot", session);
-            winningResponse += "In Eurojackpott: " + highestPrice + " €. ";
+            getHighesPriceByLottery(allEntries, "german6aus49", session).then(maxPrize => {
 
-            lotteryName = "euro millions";
-            config = skillHelper.getConfigByUtterance(lotteryName);
-            session.attributes.currentConfig = config;
-            highestPrice = getHighesPriceByLottery(allEntries, "euroMillions", session);
-            winningResponse += "In Euromillions: " + highestPrice + " €. ";
+                winningResponse += "In 6 aus 49: " + maxPrize + " €. ";
 
-            lotteryName = "sechs aus fünf und vierzig";
-            config = skillHelper.getConfigByUtterance(lotteryName);
-            session.attributes.currentConfig = config;
-            highestPrice = getHighesPriceByLottery(allEntries, "austrian6aus45", session);
-            winningResponse += "In 6 aus 45: " + highestPrice + " €. ";
+                lotteryName = "euro jackpot";
+                config = skillHelper.getConfigByUtterance(lotteryName);
+                session.attributes.currentConfig = config;
+                highestPrice = getHighesPriceByLottery(allEntries, "euroJackpot", session).then(function(maxPrize) {
+                    winningResponse += "In Eurojackpott: " + maxPrize + " €. ";
 
-            lotteryName = "powerball";
-            config = skillHelper.getConfigByUtterance(lotteryName);
-            session.attributes.currentConfig = config;
-            highestPrice = getHighesPriceByLottery(allEntries, "powerBall", session);
-            winningResponse += "In Powerball: " + highestPrice + " €. ";
+                    lotteryName = "euro millions";
+                    config = skillHelper.getConfigByUtterance(lotteryName);
+                    session.attributes.currentConfig = config;
+                    getHighesPriceByLottery(allEntries, "euroMillions", session).then(function(maxPrize) {
+                        winningResponse += "In Euromillions: " + maxPrize + " €. ";
 
-            lotteryName = "mega millions";
-            config = skillHelper.getConfigByUtterance(lotteryName);
-            session.attributes.currentConfig = config;
-            highestPrice = getHighesPriceByLottery(allEntries, "megaMillions", session);
-            winningResponse += "In Megamillions: " + highestPrice + " €. ";
+                        lotteryName = "sechs aus fünf und vierzig";
+                        config = skillHelper.getConfigByUtterance(lotteryName);
+                        session.attributes.currentConfig = config;
+                        getHighesPriceByLottery(allEntries, "austrian6aus45", session).then(function(maxPrize) {
+                            winningResponse += "In 6 aus 45: " + maxPrize + " €. ";
 
-            response.tell(winningResponse);
+                            lotteryName = "powerball";
+                            config = skillHelper.getConfigByUtterance(lotteryName);
+                            session.attributes.currentConfig = config;
+                            getHighesPriceByLottery(allEntries, "powerBall", session).then(function(maxPrize) {
+                                winningResponse += "In Powerball: " + maxPrize + " €. ";
 
+                                lotteryName = "mega millions";
+                                config = skillHelper.getConfigByUtterance(lotteryName);
+                                session.attributes.currentConfig = config;
+                                getHighesPriceByLottery(allEntries, "megaMillions", session).then(function(maxPrize) {
+                                    winningResponse += "In Megamillions: " + maxPrize + " €. ";
+                                    response.tell(winningResponse);
+                                });;
+                            });
+                        });
+                    });
+                });
+            });
         });
     },
     "AMAZON.HelpIntent": function (intent, session, response) {
@@ -165,36 +170,36 @@ var DE_Intent_Handler  = {
 };
 
 function getHighesPriceByLottery(allEntries, lotteryDbName, session) {
-    skillHelper.getLotteryApiHelper(session.attributes.currentConfig.lotteryName).getLastLotteryDateAndNumbers().then(function(lotteryNumbersAndDate) {
+    return skillHelper.getLotteryApiHelper(session.attributes.currentConfig.lotteryName).getLastLotteryDateAndNumbers().then(function(lotteryNumbersAndDate) {
         console.log("got numbers");
         var maxPrize = 0;
         if(lotteryNumbersAndDate) {
             console.log("entries: " + JSON.stringify(allEntries));
             for (i = 0; i < allEntries.length; i++) {
                 console.log("current entry: " + JSON.stringify(allEntries[i]));
-                if(allEntries[i].lotteryDbName) {
-                    console.log("current entry with table: " + allEntries[i].lotteryDbName);
-                    var lotteryNumbers = skillHelper.sortLotteryNumbers(allEntries[i].lotteryDbName);
-                    for (j = 0; j < lotteryNumbers.length; j++) {
-                        var myNumbers = lotteryNumbers[j];
-                        if(myNumbers && myNumbers.length > 0) {
-                            //check how many matches we have with the given numbers!
-                            var rank = skillHelper.getRank(session.attributes, lotteryNumbersAndDate, myNumbers);
-    
-                            skillHelper.getLotteryApiHelper(session.attributes.currentConfig.lotteryName).getLastPrizeByRank(rank).then(function(money) {
-                                var moneySpeech = ""
-                                if(money && money.length > 0 && money > maxPrize)
-                                    maxPrize = money;
-                                
-                            }).catch(function(err) {
-                                console.log(err);
-                            });
-                        }
+                console.log("current entry with table: " + JSON.stringify(allEntries[i][lotteryDbName]));
+                if(allEntries[i][lotteryDbName] && allEntries[i][lotteryDbName].length > 0) {
+                    console.log("sorting numbers");
+                    var lotteryNumbers = skillHelper.sortLotteryNumbers(allEntries[i][lotteryDbName]);
+                    console.log("sorted numbers: " + JSON.stringify(lotteryNumbers));
+                    if(lotteryNumbers) {
+                        //check how many matches we have with the given numbers!
+                        var rank = skillHelper.getRank(session.attributes, lotteryNumbersAndDate, lotteryNumbers);
+                        console.log("my rank is: " + rank);
+
+                        var currentMoney = skillHelper.getLotteryApiHelper(session.attributes.currentConfig.lotteryName).getLastPrizeByRank(rank).then(function(money) {
+                            console.log("my money is: " + money);
+                            return money;
+                        }).catch(function(err) {
+                            console.log(err);
+                        });
+
+                        if(currentMoney > maxPrize)
+                            maxPrize = currentMoney;
                     }
                 }
             }
         }
-
         return maxPrize;
     });
 }
