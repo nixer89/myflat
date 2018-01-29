@@ -4,6 +4,7 @@
     {"intent": "ILoveYouIntent","slots": [{"name": "name","type": "AMAZON.DE_FIRST_NAME"}]},
     {"intent": "LotteryIntent"},
     {"intent": "AskForStoredLotteryCount"},
+    {"intent": "AskHighesLotteryWin"},
     {"intent": "AMAZON.HelpIntent"},
     {"intent": "QuitIntent"}
   ]

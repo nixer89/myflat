@@ -10,5 +10,7 @@ AskForStoredLotteryCount wie viele user habe ich
 AskForStoredLotteryCount nach der Anzahl der User
 AskForStoredLotteryCount nach der Anzahl der Items
 AskForStoredLotteryCount nach der Anzahl der Einträge
+AskHighesLotteryWin wer hat am meisten gewonnen
+AskHighesLotteryWin wer am meisten gewonnen hat
 QuitIntent beenden
 QuitIntent abbrechen

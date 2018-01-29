@@ -1,11 +1,15 @@
 {
-  "name": "meine Wohnung",
-  "version": "0.0.1",
+  "name": "meine_wohnung",
+  "version": "1.0.0",
+  "description": "meine wohunung skill",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Daniel Siedentopf",
+  "license": "ISC",
   "dependencies": {
-    "dynasty": "^0.2.8",
-    "html-div2json-js": "^0.1.8",
-    "node-fetch": "^1.7.3",
-    "sync-request": "^4.0.1",
-    "then-request": "^2.2.0"
+    "dynasty": "^0.3.8",
+    "node-fetch": "^1.7.3"
   }
 }

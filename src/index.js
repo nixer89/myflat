@@ -23,9 +23,9 @@ var credentials = {
  * The AlexaSkill prototype and helper functions
  */
 var AlexaSkill = require('./AlexaSkill');
-var nodeFetch = require('node-fetch');
 var dynasty = require('dynasty')(credentials);
-var divtojson = require('html-div2json-js');
+var skillHelperPrototype = require('./SkillHelper');
+var skillHelper;
 
 var lottoDbTable = function() {
     return dynasty.table(LOTTO_DATA_TABLE_NAME);
@@ -40,11 +40,6 @@ var lottoDbTable = function() {
 var MyFlat = function () {
     AlexaSkill.call(this, APP_ID);
 };
-
-var LOTTO_URL = "http://www.lottozahlenonline.de/statistik/beide-spieltage/lottozahlen-archiv.php?j=";
-var locale = "de-DE";
-var myNumbers = ['6','12','18','21','27','48'];
-var mySuperZahl = '6';
 
 // Extend AlexaSkill
 MyFlat.prototype = Object.create(AlexaSkill.prototype);
@@ -110,38 +105,55 @@ var DE_Intent_Handler  = {
     "ILoveYouIntent": function (intent, session, response) {
         response.ask("Ich liebe dich so sehr " + intent.slots.name.value + ". Du bist das süßeste Mädchen auf der Welt!","");
     },
-    "LotteryIntent": function (intent, session, response) {
-        invokeBackend(LOTTO_URL + "2017").then(function(body) {
-            var alleGewinnZahlen = convertLottoToJson(body, "gewinnzahlen", 1);
-            var lastLottoDayJson = alleGewinnZahlen[alleGewinnZahlen.length-1][0];
-            
-            console.log(lastLottoDayJson);
-            
-            //check how many matches we have with the given numbers!
-            var gewinnZahlen = getMatchingNumbers(lastLottoDayJson);
-            
-            console.log(gewinnZahlen);
-            
-            var numberOfMatches = gewinnZahlen.length;
-            //also get the superzahl
-            var superZahl = getSuperZahl(lastLottoDayJson);
-
-            if(numberOfMatches == 0)
-                response.tell("In der letzten Ziehung vom " + lastLottoDayJson.zahlensuche_datum + " hattest du leider keine richtige Zahl. Somit hast du leider nichts gewonnen! Ich wünsche dir weiterhin viel Glück!");
-            else if(numberOfMatches == 1)
-                response.tell("In der letzten Ziehung vom " + lastLottoDayJson.zahlensuche_datum + " hattest du nur eine richtige Zahl. Somit hast du leider nichts gewonnen! Ich wünsche dir weiterhin viel Glück!");
-            else if(numberOfMatches == 2 && !(mySuperZahl == superZahl))
-                response.tell("In der letzten Ziehung vom " + lastLottoDayJson.zahlensuche_datum + " hattest du nur zwei richtige Zahlen. Somit hast du leider nichts gewonnen! Ich wünsche dir weiterhin viel Glück!");
-            else if(numberOfMatches == 6 && mySuperZahl == superZahl)
-                response.tell("In der letzten Ziehung vom " + lastLottoDayJson.zahlensuche_datum + " hast den JackPott geknackt! Alle Zahlen und die Superzahl hast du richtig getippt. Jetzt kannst du es richtig krachen lassen! Herzlichen Glückwunsch!");
-            else
-                response.tell("In der letzten Ziehung vom " + lastLottoDayJson.zahlensuche_datum + " hast du " + numberOfMatches + " richtige Zahlen " + (mySuperZahl == superZahl ? " und sogar die Superzahl richtig! Herzlichen Glückwunsch!" : ""));
-        });
-    },
     "AskForStoredLotteryCount": function (intent, session, response) {
         lottoDbTable().scan().then(function(allEntries) {
             var output = "Aktuell befinden sich " + allEntries.length + " Einträge in deiner Datenbank";
             response.tell(output);
+        });
+    },
+    "AskHighesLotteryWin": function (intent, session, response) {
+        lottoDbTable().scan().then(function(allEntries) {
+            var winningResponse = "";
+
+            var lotteryName = "sechs aus neun und vierzig"
+            var config = skillHelper.getConfigByUtterance(lotteryName);
+            session.attributes.currentConfig = config;
+            var highestPrice = 0;
+            highestPrice = getHighesPriceByLottery(allEntries, "german6aus49", session);
+            winningResponse += "In 6 aus 49: " + highestPrice + " €. ";
+
+            lotteryName = "euro jackpot";
+            config = skillHelper.getConfigByUtterance(lotteryName);
+            session.attributes.currentConfig = config;
+            highestPrice = getHighesPriceByLottery(allEntries, "euroJackpot", session);
+            winningResponse += "In Eurojackpott: " + highestPrice + " €. ";
+
+            lotteryName = "euro millions";
+            config = skillHelper.getConfigByUtterance(lotteryName);
+            session.attributes.currentConfig = config;
+            highestPrice = getHighesPriceByLottery(allEntries, "euroMillions", session);
+            winningResponse += "In Euromillions: " + highestPrice + " €. ";
+
+            lotteryName = "sechs aus fünf und vierzig";
+            config = skillHelper.getConfigByUtterance(lotteryName);
+            session.attributes.currentConfig = config;
+            highestPrice = getHighesPriceByLottery(allEntries, "austrian6aus45", session);
+            winningResponse += "In 6 aus 45: " + highestPrice + " €. ";
+
+            lotteryName = "powerball";
+            config = skillHelper.getConfigByUtterance(lotteryName);
+            session.attributes.currentConfig = config;
+            highestPrice = getHighesPriceByLottery(allEntries, "powerBall", session);
+            winningResponse += "In Powerball: " + highestPrice + " €. ";
+
+            lotteryName = "mega millions";
+            config = skillHelper.getConfigByUtterance(lotteryName);
+            session.attributes.currentConfig = config;
+            highestPrice = getHighesPriceByLottery(allEntries, "megaMillions", session);
+            winningResponse += "In Megamillions: " + highestPrice + " €. ";
+
+            response.tell(winningResponse);
+
         });
     },
     "AMAZON.HelpIntent": function (intent, session, response) {
@@ -152,12 +164,48 @@ var DE_Intent_Handler  = {
     }
 };
 
+function getHighesPriceByLottery(allEntries, lotteryDbName, session) {
+    skillHelper.getLotteryApiHelper(session.attributes.currentConfig.lotteryName).getLastLotteryDateAndNumbers().then(function(lotteryNumbersAndDate) {
+        console.log("got numbers");
+        var maxPrize = 0;
+        if(lotteryNumbersAndDate) {
+            console.log("entries: " + JSON.stringify(allEntries));
+            for (i = 0; i < allEntries.length; i++) {
+                console.log("current entry: " + JSON.stringify(allEntries[i]));
+                if(allEntries[i].lotteryDbName) {
+                    console.log("current entry with table: " + allEntries[i].lotteryDbName);
+                    var lotteryNumbers = skillHelper.sortLotteryNumbers(allEntries[i].lotteryDbName);
+                    for (j = 0; j < lotteryNumbers.length; j++) {
+                        var myNumbers = lotteryNumbers[j];
+                        if(myNumbers && myNumbers.length > 0) {
+                            //check how many matches we have with the given numbers!
+                            var rank = skillHelper.getRank(session.attributes, lotteryNumbersAndDate, myNumbers);
+    
+                            skillHelper.getLotteryApiHelper(session.attributes.currentConfig.lotteryName).getLastPrizeByRank(rank).then(function(money) {
+                                var moneySpeech = ""
+                                if(money && money.length > 0 && money > maxPrize)
+                                    maxPrize = money;
+                                
+                            }).catch(function(err) {
+                                console.log(err);
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        return maxPrize;
+    });
+}
+
 // Create the handler that responds to the Alexa Request.
 exports.handler = function (event, context) {
     // Create an instance of the MyFlat skill.
     var myFlat = new MyFlat();
 
     locale = event.request.locale
+    skillHelper = new skillHelperPrototype(locale);
 
     if (locale == 'en-US')
         myFlat.intentHandlers = US_Intent_Handler; //register us intent handler
@@ -166,26 +214,3 @@ exports.handler = function (event, context) {
 
     myFlat.execute(event, context);
 };
-
-function getMatchingNumbers(lastDayJson) {
-    var numberOfMatches = 0;
-
-    var gewinnZahlen = [lastDayJson.zahlensuche_zahl, lastDayJson.zahlensuche_zahl3, lastDayJson.zahlensuche_zahl4, lastDayJson.zahlensuche_zahl5, lastDayJson.zahlensuche_zahl6, lastDayJson.zahlensuche_zahl7];
-    
-    return gewinnZahlen.filter(n => myNumbers.indexOf(n) != -1);
-}
-
-function getSuperZahl(lastDay) {
-    return lastDay.zahlensuche_zz;
-}
-
-function convertLottoToJson(html, div_name, row_offset) {
-    return divtojson.convert(html, div_name, row_offset);
-}
-
-function invokeBackend(url, options) {
-    return nodeFetch(url)
-        .then(function(res) {
-            return res.text();
-        });
-}
