@@ -133,21 +133,39 @@ Spiel77ApiHelper.prototype.getLastPrizeByRank = function(myRank) {
 
             if(lastLottery.spiel77Odds && lastLottery.spiel77Odds['rank'+myRank]) {
                 if(lastLottery.spiel77Odds['rank'+myRank].prize > 0) { //check the internet
-                    var price = lastLottery.spiel77Odds['rank'+myRank].prize + "";
-                    return price.substring(0, price.length-2) + (isGermanLang() ? "," : ".") + price.substring(price.length-2) + " €.";
+                    return lastLottery.spiel77Odds['rank'+myRank].prize;
                 } else {
-                    return null;
+                    return 0;
                 }
             } else if(spiel77Prizes['rank'+myRank] && spiel77Prizes['rank'+myRank] > 0) { // no internet, use if not jackpot!
-                return spiel77Prizes['rank'+myRank] + " €.";
+                return spiel77Prizes['rank'+myRank];
             } else {
-                return null;
+                return 0;
             }
         } else {
-            return null;
+            return 0;
         }
     }).catch(function(err) {
         console.log(err);
+    });
+};
+
+Spiel77ApiHelper.prototype.getLastLotteryOdds = function() {
+    return invokeBackend(LOTTOLAND_API_URL).then(function(json) {
+        if(json) {
+            var lastLottery = null;
+            
+            if(json.last.numbers && json.last.numbers.length > 0) {
+                lastLottery = json.last;
+            } else {
+                lastLottery = json.past;
+            }
+
+            return lastLottery.spiel77Odds;
+        } else {
+            return null;
+        }}).catch(function(err) {
+            console.log(err);
     });
 };
 

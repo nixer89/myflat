@@ -124,17 +124,35 @@ EuroJackpotApiHelper.prototype.getLastPrizeByRank = function(myRank) {
 
             if(lastLottery.odds && lastLottery.odds['rank'+myRank]) {
                 if(lastLottery.odds['rank'+myRank].prize > 0) {
-                    var price = lastLottery.odds['rank'+myRank].prize + "";
-                    return price.substring(0, price.length-2) + (isGermanLang() ? "," : ".") + price.substring(price.length-2) + " €.";
+                    return lastLottery.odds['rank'+myRank].prize;
                 } else {
-                    return null;
+                    return 0;
                 }
             }
         } else {
-            return null;
+            return 0;
         }
     }).catch(function(err) {
         console.log(err);
+    });
+};
+
+EuroJackpotApiHelper.prototype.getLastLotteryOdds = function() {
+    return invokeBackend(LOTTOLAND_API_URL).then(function(json) {
+        if(json) {
+            var lastLottery = null;
+            
+            if(json.last.numbers && json.last.numbers.length > 0) {
+                lastLottery = json.last;
+            } else {
+                lastLottery = json.past;
+            }
+
+            return lastLottery.odds;
+        } else {
+            return null;
+        }}).catch(function(err) {
+            console.log(err);
     });
 };
 

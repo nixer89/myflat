@@ -133,22 +133,39 @@ AustrianJokerApiHelper.prototype.getLastPrizeByRank = function(myRank) {
 
             if(lastLottery.jokerOdds && lastLottery.jokerOdds['rank'+myRank]) {
                 if(lastLottery.jokerOdds['rank'+myRank].prize > 0) {
-                    var price = lastLottery.jokerOdds['rank'+myRank].prize + "";
-                    price = price.substring(0, price.length-2) + (isGermanLang() ? "," : ".") + price.substring(price.length-2);
-                    return formatPrize(price);
+                    return lastLottery.jokerOdds['rank'+myRank].prize;
                 } else {
-                    return null;
+                    return 0;
                 }
             }  else if(jokerPrizes['rank'+myRank] && jokerPrizes['rank'+myRank] > 0) { // no internet, use if not jackpot!
-                return formatPrize(jokerPrizes['rank'+myRank]+"");
+                return jokerPrizes['rank'+myRank];
             } else {
-                return null;
+                return 0;
             }
         } else {
-            return null;
+            return 0;
         }
     }).catch(function(err) {
         console.log(err);
+    });
+};
+
+AustrianJokerApiHelper.prototype.getLastLotteryOdds = function() {
+    return invokeBackend(LOTTOLAND_API_URL).then(function(json) {
+        if(json) {
+            var lastLottery = null;
+            
+            if(json.last.numbers && json.last.numbers.length > 0) {
+                lastLottery = json.last;
+            } else {
+                lastLottery = json.past;
+            }
+
+            return lastLottery.jokerOdds;
+        } else {
+            return null;
+        }}).catch(function(err) {
+            console.log(err);
     });
 };
 

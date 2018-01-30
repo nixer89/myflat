@@ -147,19 +147,36 @@ PowerBallApiHelper.prototype.getLastPrizeByRank = function(myRank) {
                 lastLottery = json.past;
             }
 
-            console.log("check for prize");
             if(isGermanLang() && lastLottery.odds && lastLottery.odds['rank'+myRank] && lastLottery.odds['rank'+myRank].prize > 0) {
-                console.log("check for prize german");
-                return formatPrize(lastLottery.odds['rank'+myRank].prize, lastLottery.powerplay, myRank);
+                return lastLottery.odds['rank'+myRank].prize;
             } else if(!isGermanLang() && powerBallPrizes['rank'+myRank] && powerBallPrizes['rank'+myRank].prize > 0){ //no odds yet -> check if rank is in known prize
-                return formatPrize(powerBallPrizes['rank'+myRank], lastLottery.powerplay, myRank);
+                return powerBallPrizes['rank'+myRank];
             } else {
-                return null;
+                return 0;
             }
         }
         else return null;
     }).catch(function(err) {
         console.log(err);
+    });
+};
+
+PowerBallApiHelper.prototype.getLastLotteryOdds = function() {
+    return invokeBackend(LOTTOLAND_API_URL).then(function(json) {
+        if(json) {
+            var lastLottery = null;
+            
+            if(json.last.numbers && json.last.numbers.length > 0) {
+                lastLottery = json.last;
+            } else {
+                lastLottery = json.past;
+            }
+
+            return lastLottery.odds;
+        } else {
+            return null;
+        }}).catch(function(err) {
+            console.log(err);
     });
 };
 

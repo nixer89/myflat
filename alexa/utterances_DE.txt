@@ -12,5 +12,6 @@ AskForStoredLotteryCount nach der Anzahl der Items
 AskForStoredLotteryCount nach der Anzahl der Einträge
 AskHighesLotteryWin wer hat am meisten gewonnen
 AskHighesLotteryWin wer am meisten gewonnen hat
+AskHighesLotteryWin wo wurde am meisten gewonnen
 QuitIntent beenden
 QuitIntent abbrechen

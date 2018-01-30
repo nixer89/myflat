@@ -133,22 +133,39 @@ Super6ApiHelper.prototype.getLastPrizeByRank = function(myRank) {
 
             if(lastLottery.super6Odds && lastLottery.super6Odds['rank'+myRank]) {
                 if(lastLottery.super6Odds['rank'+myRank].prize > 0) {
-                    var price = lastLottery.super6Odds['rank'+myRank].prize + "";
-                    price = price.substring(0, price.length-2) + (isGermanLang() ? "," : ".") + price.substring(price.length-2);
-                    return formatPrize(price);
+                    return lastLottery.super6Odds['rank'+myRank].prize;
                 } else {
-                    return null;
+                    return 0;
                 }
             }  else if(super6Prizes['rank'+myRank] && super6Prizes['rank'+myRank] > 0) { // no internet, use if not jackpot!
-                return formatPrize(super6Prizes['rank'+myRank]+"");
+                return super6Prizes['rank'+myRank];
             } else {
-                return null;
+                return 0;
             }
         } else {
-            return null;
+            return 0;
         }
     }).catch(function(err) {
         console.log(err);
+    });
+};
+
+Super6ApiHelper.prototype.getLastLotteryOdds = function() {
+    return invokeBackend(LOTTOLAND_API_URL).then(function(json) {
+        if(json) {
+            var lastLottery = null;
+            
+            if(json.last.numbers && json.last.numbers.length > 0) {
+                lastLottery = json.last;
+            } else {
+                lastLottery = json.past;
+            }
+
+            return lastLottery.super6Odds;
+        } else {
+            return null;
+        }}).catch(function(err) {
+            console.log(err);
     });
 };
 

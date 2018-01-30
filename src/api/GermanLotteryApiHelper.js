@@ -121,27 +121,45 @@ GermanLotteryApiHelper.prototype.getCurrentJackpot =function() {
 GermanLotteryApiHelper.prototype.getLastPrizeByRank = function(myRank) {
     return invokeBackend(LOTTOLAND_API_URL).then(function(json) {
         if(json) {
-        var lastLottery = null;
-        
-        if(json.last.numbers && json.last.numbers.length > 0) {
-            lastLottery = json.last;
-        } else {
-            lastLottery = json.past;
-        }
-
-        if(lastLottery.odds && lastLottery.odds['rank'+myRank]) {
-            if(lastLottery.odds['rank'+myRank].prize > 0) {
-                var price = lastLottery.odds['rank'+myRank].prize + "";
-                return price.substring(0, price.length-2) + (isGermanLang() ? "," : ".") + price.substring(price.length-2) + " €.";
+            var lastLottery = null;
+            
+            if(json.last.numbers && json.last.numbers.length > 0) {
+                lastLottery = json.last;
             } else {
-                return null;
+                lastLottery = json.past;
             }
+
+            if(lastLottery.odds && lastLottery.odds['rank'+myRank]) {
+                if(lastLottery.odds['rank'+myRank].prize > 0) {
+                    return lastLottery.odds['rank'+myRank].prize;
+                } else {
+                    return 0;
+                }
+            }
+        } else {
+            return 0;
         }
-    } else {
-        return null;
-    }
-    }).catch(function(err) {
-        console.log(err);
+        }).catch(function(err) {
+            console.log(err);
+    });
+};
+
+GermanLotteryApiHelper.prototype.getLastLotteryOdds = function() {
+    return invokeBackend(LOTTOLAND_API_URL).then(function(json) {
+        if(json) {
+            var lastLottery = null;
+            
+            if(json.last.numbers && json.last.numbers.length > 0) {
+                lastLottery = json.last;
+            } else {
+                lastLottery = json.past;
+            }
+
+            return lastLottery.odds;
+        } else {
+            return null;
+        }}).catch(function(err) {
+            console.log(err);
     });
 };
 

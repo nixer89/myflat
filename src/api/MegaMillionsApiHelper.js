@@ -148,17 +148,36 @@ MegaMillionsApiHelper.prototype.getLastPrizeByRank = function(myRank) {
             }
 
             if(isGermanLang() && lastLottery.odds && lastLottery.odds['rank'+myRank] && lastLottery.odds['rank'+myRank].prize > 0) {
-                return formatPrize(lastLottery.odds['rank'+myRank].prize, lastLottery.megaplier, myRank);
+                return lastLottery.odds['rank'+myRank].prize;
             } else if(!isGermanLang() && megaMillionsPrizes['rank'+myRank] && megaMillionsPrizes['rank'+myRank].prize > 0){ //no odds yet -> check if rank is in known prize
-                return formatPrize(megaMillionsPrizes['rank'+myRank], lastLottery.megaplier, myRank);
+                return megaMillionsPrizes['rank'+myRank];
             } else {
-                return null;
+                return 0;
             }
         } else {
-            return null;
+            return 0;
         }
     }).catch(function(err) {
         console.log(err);
+    });
+};
+
+MegaMillionsApiHelper.prototype.getLastLotteryOdds = function() {
+    return invokeBackend(LOTTOLAND_API_URL).then(function(json) {
+        if(json) {
+            var lastLottery = null;
+            
+            if(json.last.numbers && json.last.numbers.length > 0) {
+                lastLottery = json.last;
+            } else {
+                lastLottery = json.past;
+            }
+
+            return lastLottery.odds;
+        } else {
+            return null;
+        }}).catch(function(err) {
+            console.log(err);
     });
 };
 

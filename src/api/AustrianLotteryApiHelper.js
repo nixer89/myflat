@@ -130,17 +130,35 @@ AustrianLotteryApiHelper.prototype.getLastPrizeByRank = function(myRank) {
 
             if(lastLottery.odds && lastLottery.odds['rank'+myRank]) {
                 if(lastLottery.odds['rank'+myRank].prize > 0) {
-                    var price = lastLottery.odds['rank'+myRank].prize + "";
-                    return price.substring(0, price.length-2) + (isGermanLang() ? "," : ".") + price.substring(price.length-2) + " €.";
+                    return lastLottery.odds['rank'+myRank].prize;
                 } else {
-                    return null;
+                    return 0;
                 }
             }
         } else {
-            return null;
+            return 0;
         }
     }).catch(function(err) {
         console.log(err);
+    });
+};
+
+AustrianLotteryApiHelper.prototype.getLastLotteryOdds = function() {
+    return invokeBackend(LOTTOLAND_API_URL).then(function(json) {
+        if(json) {
+            var lastLottery = null;
+            
+            if(json.last.numbers && json.last.numbers.length > 0) {
+                lastLottery = json.last;
+            } else {
+                lastLottery = json.past;
+            }
+
+            return lastLottery.odds;
+        } else {
+            return null;
+        }}).catch(function(err) {
+            console.log(err);
     });
 };
 
@@ -155,7 +173,6 @@ AustrianLotteryApiHelper.prototype.getLotteryOddRank = function(numberOfMatchesM
         if(austrianOdds['rank'+i][0] == myRank[0] && austrianOdds['rank'+i][1] == myRank[1])
             rank = i;
     }
-    console.log("rank including zusatzzahl: " + rank);
 
     //no matches with zusatzzahl found -> check without zusatzzahl - coz it is just additionally
     if(rank == 1000) {
